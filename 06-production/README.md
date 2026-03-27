@@ -1,4 +1,4 @@
-# §6 — Production
+# 6 — Production
 
 **Goal:** Deploy, secure, scale, and operate LLM applications in production.
 

@@ -1,4 +1,4 @@
-# §7 — Career & Portfolio
+# 7 — Career & Portfolio
 
 **Goal:** Package your learning into career assets that demonstrate real AI engineering skills.
 

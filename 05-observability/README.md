@@ -1,4 +1,4 @@
-# §5 — Observability & Evaluation
+# 5 — Observability & Evaluation
 
 **Goal:** Instrument, trace, and systematically evaluate LLM applications.
 

@@ -23,7 +23,7 @@ Take a previous project (your RAG app is ideal), containerize it with Docker, de
 - Railway, Render, or Fly.io (all have free tiers)
 - FastAPI
 - `slowapi` for rate limiting
-- Your RAG project from §3
+- Your RAG project from 3
 
 ## Requirements
 

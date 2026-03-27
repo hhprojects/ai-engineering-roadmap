@@ -1,4 +1,4 @@
-# §4 — Advanced Agents
+# 4 — Advanced Agents
 
 **Goal:** Build tool-using agents, implement MCP, and orchestrate multi-agent systems.
 

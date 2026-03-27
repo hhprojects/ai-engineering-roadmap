@@ -20,7 +20,7 @@ Take your RAG or Agent project from a previous section and integrate Langfuse tr
 
 - Python 3.11+
 - Langfuse Python SDK
-- A previous project (RAG from §3 or Agent from §4 recommended)
+- A previous project (RAG from 3 or Agent from 4 recommended)
 
 ## Requirements
 

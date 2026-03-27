@@ -1,4 +1,4 @@
-# §0 — Software Engineering Foundations
+# 0 — Software Engineering Foundations
 
 **Goal:** Ensure Python proficiency, backend basics, and DevOps fundamentals before touching AI.
 

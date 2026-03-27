@@ -1,4 +1,4 @@
-# §3 — RAG (Retrieval-Augmented Generation)
+# 3 — RAG (Retrieval-Augmented Generation)
 
 **Goal:** Build retrieval pipelines from basic to production-grade with evaluation.
 

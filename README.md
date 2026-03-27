@@ -14,14 +14,14 @@ Every section has curated readings, YouTube videos, and 2-3 projects at differen
 ┌─────────────────────────────────────────────────────────────────┐
 │                    AI Engineering Roadmap 2026                   │
 ├─────────────┬───────────────┬───────────────┬───────────────────┤
-│ §0          │ §1            │ §2            │ §3                │
+│ 0          │ 1            │ 2            │ 3                │
 │ Foundations  │ LLM           │ Prompt        │ RAG               │
 │ Python,     │ Fundamentals  │ Engineering   │ Retrieval-        │
 │ APIs,       │ Transformers, │ Techniques,   │ Augmented         │
 │ Docker      │ Tokens,       │ Structured    │ Generation,       │
 │             │ Attention     │ Outputs       │ Vector Search     │
 ├─────────────┼───────────────┼───────────────┼───────────────────┤
-│ §4          │ §5            │ §6            │ §7                │
+│ 4          │ 5            │ 6            │ 7                │
 │ Agents      │ Observability │ Production    │ Career &          │
 │ Tool Use,   │ Tracing,      │ Deploy,       │ Portfolio         │
 │ MCP,        │ Evals,        │ Security,     │ Blog, OSS,        │
@@ -50,10 +50,10 @@ Every section has curated readings, YouTube videos, and 2-3 projects at differen
 ## 🚀 How to Use This Roadmap
 
 ### Linear Path
-Start at §0 and work through each section in order. The optional [capstone thread](capstone/) ties everything together — you'll build one project that grows with each section.
+Start at 0 and work through each section in order. The optional [capstone thread](capstone/) ties everything together — you'll build one project that grows with each section.
 
 ### Modular Path
-Already know Python? Skip §0. Comfortable with transformers? Jump to §2. Each section is self-contained with its own readings and projects.
+Already know Python? Skip 0. Comfortable with transformers? Jump to 2. Each section is self-contained with its own readings and projects.
 
 ### Difficulty Levels
 

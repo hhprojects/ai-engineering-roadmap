@@ -1,4 +1,4 @@
-# §1 — LLM Fundamentals
+# 1 — LLM Fundamentals
 
 **Goal:** Understand how transformers work, key model families, and the economics of tokens.
 

@@ -20,7 +20,7 @@ An evaluation framework for your RAG project with 50+ question/answer pairs, aut
 ## Tech Stack
 
 - Python 3.11+
-- Your RAG project from §3
+- Your RAG project from 3
 - Langfuse for experiment tracking
 - `openai` or `anthropic` SDK (for LLM-based metrics)
 - pytest for running eval suites

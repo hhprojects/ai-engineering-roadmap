@@ -1,4 +1,4 @@
-# §2 — Prompt Engineering & APIs
+# 2 — Prompt Engineering & APIs
 
 **Goal:** Master prompt techniques, structured outputs, function calling, and multi-provider API patterns.
 
