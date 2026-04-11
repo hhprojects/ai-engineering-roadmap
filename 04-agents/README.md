@@ -24,6 +24,14 @@
 
 ---
 
+## 🔬 Deep Dive
+
+| Sub-section | Description |
+|-------------|-------------|
+| [Agent Harnesses](harnesses/README.md) | Study Claude Code, OpenAI Codex, and Aider as objects of study — permissions, hooks, context compaction, subagent dispatch. Prerequisite for Project 4. |
+
+---
+
 ## 🔨 Projects
 
 | # | Project | Difficulty | Description |
@@ -31,6 +39,7 @@
 | 1 | [Tool-Using Chatbot](projects/01-tool-using-chatbot.md) | 🟢 Beginner | Chatbot with web search, calculator, and file tools |
 | 2 | [MCP Server + Client](projects/02-mcp-server.md) | 🟡 Intermediate | SQLite exposed as MCP tools with an agent client |
 | 3 | [Multi-Agent Research System](projects/03-multi-agent-research.md) | 🟠 Advanced | Planner + researchers + critic + synthesizer |
+| 4 | [Build Your Own Harness](projects/04-build-your-own-harness.md) | 🔴 Capstone | Rebuild the skeleton of Claude Code — permissions, hooks, compaction, subagents |
 
 ---
 
