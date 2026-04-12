@@ -62,15 +62,93 @@ This works well in practice, but it has one big drawback: **the model cannot han
 
 ### Rotary Position Embedding (RoPE) — the current default
 
-Introduced by the RoFormer paper (2021) and now used by **Llama, Qwen, Mistral, Gemma, DeepSeek**, and most open-weight models released after 2022. Instead of adding position information to the embeddings, RoPE *rotates* the query and key vectors inside the attention mechanism by an angle that depends on position. The rotation is applied in 2D subspaces of the vector.
+Introduced by the RoFormer paper (2021) and now used by **Llama, Claude, Qwen, Mistral, Gemma, DeepSeek**, and virtually every frontier model released after 2022. RoPE is the de facto standard for position encoding in modern LLMs, both open-weight and (almost certainly) closed-source.
 
-Why this is clever:
+Instead of adding position information to the embeddings, RoPE *rotates* the query and key vectors inside the attention mechanism by an angle that depends on position. This is applied during **every forward pass** — both training and inference — because position isn't a property of the token itself. The word "cat" at position 5 gets a different rotation than "cat" at position 200.
 
-- Two tokens at positions `m` and `n` end up with a dot product that depends only on `m - n`, the *relative* distance. This matches how language actually works — what matters for attention is "how far apart are these words," not their absolute position.
-- RoPE extrapolates to longer sequences much better than learned embeddings, though still imperfectly. Techniques like **YaRN** and **RoPE scaling** stretch a RoPE-trained model to 4× its original context with only minor degradation.
-- It composes cleanly with KV caching and flash attention, which is why every serious open-weight model adopted it.
+#### How RoPE stores positions
 
-You don't need to implement RoPE to understand LLMs, but you do need to recognize the name — it's the "how do we handle long context" answer of the 2023+ era.
+You might wonder: how do you encode *relative* positions? If you have 100,000 tokens, token 3 is simultaneously 1 position from token 2, 3 positions from token 0, and 99,997 positions from the last token. You can't store all those relative distances in one vector.
+
+RoPE's insight: **store absolute positions, but in a way that produces relative distances when two tokens interact.** Each token gets rotated based on its own absolute position — token at position `m` is rotated by `m × θ`, token at position `n` by `n × θ`. Then during attention, when the model computes the dot product between two tokens:
+
+```
+dot_product(rotated_by(mθ), rotated_by(nθ))  →  depends only on (m - n)θ
+```
+
+The absolute angles cancel out and only the **difference** remains. It's like clock hands — if one hand points at 3 and another at 7, the angle between them is 4, regardless of where the clock started. Relative distances emerge naturally from the math of rotation, without ever being stored explicitly.
+
+#### Why rotation needs pairs of dimensions
+
+Rotation is inherently a **2D operation** — you rotate on a flat plane, which requires two coordinates. You can't rotate a single number. So RoPE takes the `d_model` dimensions and pairs them up:
+
+```
+[dim 0, dim 1]         → pair 0, rotate together
+[dim 2, dim 3]         → pair 1, rotate together
+...
+[dim 4094, dim 4095]   → pair 2047, rotate together
+```
+
+A model with `d_model = 4096` has **2048 rotation pairs** (4096 ÷ 2). Each pair is a 2D plane that gets rotated independently. The standard 2D rotation formula is applied to each pair:
+
+```
+(x', y') = (x·cos θ - y·sin θ,  x·sin θ + y·cos θ)
+```
+
+#### The multi-speed clock: how 2048 pairs encode position
+
+Here's the crucial design: each pair rotates at a **different speed**. The angle for pair `k` at position `pos` is:
+
+```
+angle = pos / (base ^ (2k / d_model))
+```
+
+where `base` is typically 10,000. This means:
+
+```
+Pair 0:     rotates fast    → large angle per position step
+Pair 1:     slightly slower
+Pair 2:     even slower
+...
+Pair 2047:  rotates very slowly → tiny angle per position step
+```
+
+Think of it as **a clock with 2048 hands, each ticking at a different speed**:
+
+- **Fast pairs** (like a second hand) — precise for distinguishing nearby tokens. Position 5 vs 6 look very different. But they wrap around quickly, so position 5 and position 50,005 might look the same on this pair alone.
+- **Slow pairs** (like an hour hand) — useless for telling apart neighboring positions (0.0005° vs 0.0006°), but great for distant tokens. Position 5 vs 50,000 are clearly different.
+- **Together** — the combination of all 2048 speeds is unique for every position, just like 3:45:22 on a clock is unique even though each hand individually wraps around.
+
+This maps to how language works: some attention heads care about very local relationships ("the" is right next to "cat"), while others care about long-range dependencies (a pronoun referring to something 500 tokens ago). The fast and slow pairs naturally support both.
+
+#### Scaling RoPE for long context windows
+
+The original RoPE formula with `base = 10,000` was designed for sequences up to ~8k tokens. At longer sequences, even the slowest pairs start wrapping around too many times and lose positional uniqueness. At 1,000,000 tokens with the original base:
+
+```
+Slowest pair: 1,000,000 × 0.0001 = 100 radians ≈ 16 full rotations
+```
+
+The fix is straightforward: **increase the base number** to slow everything down.
+
+| Model | Base | Effective context |
+|-------|------|-------------------|
+| Original RoPE | 10,000 | ~8k tokens |
+| Llama 3.1 | 500,000 | 128k tokens |
+| 1M+ context models | 10,000,000+ | 1M+ tokens |
+
+With `base = 10,000,000`, the slowest pair at position 1,000,000 has barely moved (~6°), leaving plenty of room to distinguish positions. This is essentially what **YaRN**, **RoPE scaling**, and other context extension techniques do — slow down the rotation speeds so the clock hands don't wrap around within the target sequence length. This is a key part of the "how do we handle very long context" engineering that differentiates frontier models.
+
+#### When RoPE is applied
+
+RoPE is not learned — the rotation angles are set by a fixed formula and never change. The model learns *how to use* these rotations during training (the attention weights learn what "a token rotated by this much relative to me" means), but the rotation itself is deterministic and identical between training and inference. This is what makes it reliable: the same position always produces the same rotation.
+
+```
+Training:   "the cat sat" → token 1 ("cat") rotated by 1θ for each pair
+Inference:  "the cat sat" → token 1 ("cat") rotated by 1θ for each pair  ← identical
+```
+
+You don't need to implement RoPE to understand LLMs, but you should understand the mechanism — it's the foundation of how every modern model handles position, and the basis for all long-context engineering.
 
 ### ALiBi — the underdog
 

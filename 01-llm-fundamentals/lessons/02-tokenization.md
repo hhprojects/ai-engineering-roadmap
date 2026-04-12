@@ -38,9 +38,11 @@ There are three algorithms you need to know by name.
 
 ### Byte Pair Encoding (BPE)
 
-The most popular. Used by **GPT, Llama, Gemma, Qwen, Mistral**, and most open-weight models.
+The most popular. Used by **GPT, Claude, Llama, Gemma, Qwen, Mistral, DeepSeek, GLM, Minimax**, and virtually every frontier model today. BPE is the de facto standard for decoder-only (generative) models.
 
-BPE starts with a base vocabulary (characters or bytes) and repeatedly merges the most frequent adjacent pair until the vocabulary reaches a target size. Walking through a toy example:
+BPE is not a neural network — it's a simple statistical procedure with two distinct phases.
+
+**Phase 1: Training (learning the merge rules).** BPE starts with a base vocabulary (characters or bytes) and repeatedly merges the most frequent adjacent pair until the vocabulary reaches a target size. The output is an **ordered list of merge rules** — a lookup table, not learned weights. This training happens **once, before LLM training begins**, on a chosen text corpus. Walking through a toy example:
 
 ```
 Start:   ("h" "u" "g", 10), ("p" "u" "g", 5), ("p" "u" "n", 12), ("b" "u" "n", 4)
@@ -63,7 +65,40 @@ After:   ("h" "ug", 10), ("p" "ug", 5), ("p" "un", 12), ("b" "un", 4)
 
 And so on, for tens of thousands of merges. GPT-2 learned 50,000 merges on top of a 256-byte base vocabulary for a final vocabulary of 50,257 tokens.
 
+**Phase 2: Encoding (applying to new text).** Given a new string, split it into the base units (bytes or characters), then replay the merge rules in priority order — the earliest-learned merges fire first. This is deterministic: the same input always produces the same tokens. The tokenizer is frozen after training; the LLM never changes it.
+
+The full pipeline is: (1) train the tokenizer on a large corpus → merge table + vocabulary, (2) use that tokenizer to convert all training data into token sequences, (3) train the LLM on those token sequences. This is why you can't easily add new tokens to a model after training — the embedding matrix was sized to that vocabulary, and the model learned representations for those specific tokens.
+
 **Byte-level BPE** (used by GPT-2, GPT-4, most modern models) starts from the 256 possible bytes instead of Unicode characters, which guarantees that any input — including emoji, Chinese characters, or garbled bytes — can be tokenized without `<UNK>` tokens.
+
+**Why BPE won.** WordPiece and Unigram aren't dramatically better in practice, and BPE's simplicity made it the path of least resistance. Once GPT-2 popularized byte-level BPE in 2019, the ecosystem converged around it. Each model still trains its **own** BPE on its own corpus — "they all use BPE" does not mean they share a tokenizer, which is why the same sentence tokenizes differently across providers.
+
+#### Vocabulary size: the compression vs. model size tradeoff
+
+Every model picks a target vocabulary size, and the trend has been upward:
+
+| Model | Year | Vocab size |
+|-------|------|-----------|
+| GPT-2 | 2019 | 50k |
+| GPT-4 | 2023 | 100k |
+| Llama 3 | 2024 | 128k |
+| Qwen 2.5 | 2024 | 150k+ |
+
+**Bigger vocabulary** means better compression — more whole words become single tokens, so sequences are shorter and you fit more into your context window. It also means better multilingual coverage; a 50k vocabulary trained mostly on English wastes huge numbers of tokens on Chinese or Korean text. The cost is a larger embedding matrix: at 4096 dimensions, going from 50k to 150k adds ~400M parameters just to the embedding and output projection layers. There's also a data efficiency concern — rarer tokens get less training signal.
+
+**Smaller vocabulary** means longer sequences (rare words split into more pieces, burning more tokens and more compute), but a smaller model footprint and each token is better-learned from training data.
+
+In practice, as models grew to tens of billions of parameters, an extra few hundred million in embeddings became negligible, training corpora grew large enough to cover rare tokens, and context window efficiency became more valuable. This is why every generation of models has pushed vocabulary size upward.
+
+To make this concrete, the word `tokenization` might be:
+
+| Vocab size | Tokenization | Token count |
+|---|---|---|
+| 200k | `["tokenization"]` | 1 |
+| 100k | `["token", "ization"]` | 2 |
+| 32k | `["token", "iz", "ation"]` | 3 |
+
+Multiply that difference across every input and output in every API call, and it adds up fast.
 
 ### WordPiece
 
